@@ -27,15 +27,17 @@ typedef NS_ENUM(NSInteger, DeviceType) {
     DeviceTypeTablet,
     DeviceTypeTv,
     DeviceTypeDesktop,
+    DeviceTypeHeadset,
     DeviceTypeUnknown
 };
 
-#define DeviceTypeValues [NSArray arrayWithObjects: @"Handset", @"Tablet", @"Tv", @"Desktop", @"unknown", nil]
+#define DeviceTypeValues [NSArray arrayWithObjects: @"Handset", @"Tablet", @"Tv", @"Desktop", @"Headset", @"unknown", nil]
 
-#if !(TARGET_OS_TV)
+#if (!(TARGET_OS_TV || TARGET_OS_VISION))
 @import CoreTelephony;
-@import Darwin.sys.sysctl;
 #endif
+
+@import Darwin.sys.sysctl;
 
 @implementation RNDeviceInfo
 {
@@ -51,12 +53,11 @@ RCT_EXPORT_MODULE();
 
 - (NSArray<NSString *> *)supportedEvents
 {
-    return @[@"RNDeviceInfo_batteryLevelDidChange", @"RNDeviceInfo_batteryLevelIsLow", @"RNDeviceInfo_powerStateDidChange", @"RNDeviceInfo_headphoneConnectionDidChange"];
+    return @[@"RNDeviceInfo_batteryLevelDidChange", @"RNDeviceInfo_batteryLevelIsLow", @"RNDeviceInfo_powerStateDidChange", @"RNDeviceInfo_headphoneConnectionDidChange", @"RNDeviceInfo_headphoneWiredConnectionDidChange", @"RNDeviceInfo_headphoneBluetoothConnectionDidChange", @"RNDeviceInfo_brightnessDidChange"];
 }
 
 - (NSDictionary *)constantsToExport {
     return @{
-         @"uniqueId": [self getUniqueId],
          @"deviceId": [self getDeviceId],
          @"bundleId": [self getBundleId],
          @"systemName": [self getSystemName],
@@ -68,6 +69,7 @@ RCT_EXPORT_MODULE();
          @"brand": @"Apple",
          @"model": [self getModel],
          @"deviceType": [self getDeviceTypeName],
+         @"isDisplayZoomed": @([self isDisplayZoomed]),
      };
 }
 
@@ -94,6 +96,20 @@ RCT_EXPORT_MODULE();
                                                  selector:@selector(headphoneConnectionDidChange:)
                                                      name:AVAudioSessionRouteChangeNotification
                                                    object: [AVAudioSession sharedInstance]];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(headphoneWiredConnectionDidChange:)
+                                                     name:AVAudioSessionRouteChangeNotification
+                                                   object: [AVAudioSession sharedInstance]];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(headphoneBluetoothConnectionDidChange:)
+                                                     name:AVAudioSessionRouteChangeNotification
+                                                   object: [AVAudioSession sharedInstance]];
+        #if !TARGET_OS_VISION
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(brightnessDidChange:)
+                                                     name:UIScreenBrightnessDidChangeNotification
+                                                   object: nil];
+        #endif
 #endif
     }
 
@@ -124,6 +140,9 @@ RCT_EXPORT_MODULE();
             return DeviceTypeTablet;
         case UIUserInterfaceIdiomTV: return DeviceTypeTv;
         case UIUserInterfaceIdiomMac: return DeviceTypeDesktop;
+    #if TARGET_OS_VISION
+        case UIUserInterfaceIdiomVision: return DeviceTypeHeadset;
+    #endif
         default: return DeviceTypeUnknown;
     }
 }
@@ -156,6 +175,14 @@ RCT_EXPORT_METHOD(getDeviceName:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
     resolve(self.getDeviceName);
 }
 
+- (BOOL) isDisplayZoomed {
+    #if !TARGET_OS_VISION
+        return [UIScreen mainScreen].scale < [UIScreen mainScreen].nativeScale;
+    #else
+        return NO;
+    #endif
+}
+
 - (NSString *) getAppName {
     NSString *displayName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
     NSString *bundleName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleName"];
@@ -176,36 +203,15 @@ RCT_EXPORT_METHOD(getDeviceName:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
 
 - (NSDictionary *) getDeviceNamesByCode {
     return @{
-        @"iPod1,1": @"iPod Touch", // (Original)
-        @"iPod2,1": @"iPod Touch", // (Second Generation)
-        @"iPod3,1": @"iPod Touch", // (Third Generation)
-        @"iPod4,1": @"iPod Touch", // (Fourth Generation)
-        @"iPod5,1": @"iPod Touch", // (Fifth Generation)
-        @"iPod7,1": @"iPod Touch", // (Sixth Generation)
-        @"iPod9,1": @"iPod Touch", // (Seventh Generation)
         @"iPhone1,1": @"iPhone", // (Original)
         @"iPhone1,2": @"iPhone 3G", // (3G)
         @"iPhone2,1": @"iPhone 3GS", // (3GS)
-        @"iPad1,1": @"iPad", // (Original)
-        @"iPad2,1": @"iPad 2", //
-        @"iPad2,2": @"iPad 2", //
-        @"iPad2,3": @"iPad 2", //
-        @"iPad2,4": @"iPad 2", //
-        @"iPad3,1": @"iPad", // (3rd Generation)
-        @"iPad3,2": @"iPad", // (3rd Generation)
-        @"iPad3,3": @"iPad", // (3rd Generation)
         @"iPhone3,1": @"iPhone 4", // (GSM)
         @"iPhone3,2": @"iPhone 4", // iPhone 4
         @"iPhone3,3": @"iPhone 4", // (CDMA/Verizon/Sprint)
         @"iPhone4,1": @"iPhone 4S", //
         @"iPhone5,1": @"iPhone 5", // (model A1428, AT&T/Canada)
         @"iPhone5,2": @"iPhone 5", // (model A1429, everything else)
-        @"iPad3,4": @"iPad", // (4th Generation)
-        @"iPad3,5": @"iPad", // (4th Generation)
-        @"iPad3,6": @"iPad", // (4th Generation)
-        @"iPad2,5": @"iPad Mini", // (Original)
-        @"iPad2,6": @"iPad Mini", // (Original)
-        @"iPad2,7": @"iPad Mini", // (Original)
         @"iPhone5,3": @"iPhone 5c", // (model A1456, A1532 | GSM)
         @"iPhone5,4": @"iPhone 5c", // (model A1507, A1516, A1526 (China), A1529 | Global)
         @"iPhone6,1": @"iPhone 5s", // (model A1433, A1533 | GSM)
@@ -216,15 +222,15 @@ RCT_EXPORT_METHOD(getDeviceName:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
         @"iPhone8,2": @"iPhone 6s Plus", //
         @"iPhone8,4": @"iPhone SE", //
         @"iPhone9,1": @"iPhone 7", // (model A1660 | CDMA)
-        @"iPhone9,3": @"iPhone 7", // (model A1778 | Global)
         @"iPhone9,2": @"iPhone 7 Plus", // (model A1661 | CDMA)
+        @"iPhone9,3": @"iPhone 7", // (model A1778 | Global)
         @"iPhone9,4": @"iPhone 7 Plus", // (model A1784 | Global)
-        @"iPhone10,3": @"iPhone X", // (model A1865, A1902)
-        @"iPhone10,6": @"iPhone X", // (model A1901)
         @"iPhone10,1": @"iPhone 8", // (model A1863, A1906, A1907)
-        @"iPhone10,4": @"iPhone 8", // (model A1905)
         @"iPhone10,2": @"iPhone 8 Plus", // (model A1864, A1898, A1899)
+        @"iPhone10,3": @"iPhone X", // (model A1865, A1902)
+        @"iPhone10,4": @"iPhone 8", // (model A1905)
         @"iPhone10,5": @"iPhone 8 Plus", // (model A1897)
+        @"iPhone10,6": @"iPhone X", // (model A1901)
         @"iPhone11,2": @"iPhone XS", // (model A2097, A2098)
         @"iPhone11,4": @"iPhone XS Max", // (model A1921, A2103)
         @"iPhone11,6": @"iPhone XS Max", // (model A2104)
@@ -232,61 +238,135 @@ RCT_EXPORT_METHOD(getDeviceName:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
         @"iPhone12,1": @"iPhone 11",
         @"iPhone12,3": @"iPhone 11 Pro",
         @"iPhone12,5": @"iPhone 11 Pro Max",
-	@"iPhone12,8": @"iPhone SE", // (2nd Generation iPhone SE),
+        @"iPhone12,8": @"iPhone SE", // (2nd Generation iPhone SE),
         @"iPhone13,1": @"iPhone 12 mini",
         @"iPhone13,2": @"iPhone 12",
         @"iPhone13,3": @"iPhone 12 Pro",
         @"iPhone13,4": @"iPhone 12 Pro Max",
-	@"iPhone14,4": @"iPhone 13 mini",
-	@"iPhone14,5": @"iPhone 13",
         @"iPhone14,2": @"iPhone 13 Pro",
         @"iPhone14,3": @"iPhone 13 Pro Max",
-        @"iPad4,1": @"iPad Air", // 5th Generation iPad (iPad Air) - Wifi
-        @"iPad4,2": @"iPad Air", // 5th Generation iPad (iPad Air) - Cellular
-        @"iPad4,3": @"iPad Air", // 5th Generation iPad (iPad Air)
-        @"iPad4,4": @"iPad Mini 2", // (2nd Generation iPad Mini - Wifi)
-        @"iPad4,5": @"iPad Mini 2", // (2nd Generation iPad Mini - Cellular)
-        @"iPad4,6": @"iPad Mini 2", // (2nd Generation iPad Mini)
-        @"iPad4,7": @"iPad Mini 3", // (3rd Generation iPad Mini)
-        @"iPad4,8": @"iPad Mini 3", // (3rd Generation iPad Mini)
-        @"iPad4,9": @"iPad Mini 3", // (3rd Generation iPad Mini)
-        @"iPad5,1": @"iPad Mini 4", // (4th Generation iPad Mini)
-        @"iPad5,2": @"iPad Mini 4", // (4th Generation iPad Mini)
-        @"iPad5,3": @"iPad Air 2", // 6th Generation iPad (iPad Air 2)
-        @"iPad5,4": @"iPad Air 2", // 6th Generation iPad (iPad Air 2)
-        @"iPad6,3": @"iPad Pro 9.7-inch", // iPad Pro 9.7-inch
-        @"iPad6,4": @"iPad Pro 9.7-inch", // iPad Pro 9.7-inch
-        @"iPad6,7": @"iPad Pro 12.9-inch", // iPad Pro 12.9-inch
-        @"iPad6,8": @"iPad Pro 12.9-inch", // iPad Pro 12.9-inch
-        @"iPad6,11": @"iPad (5th generation)", // Apple iPad 9.7 inch (5th generation) - WiFi
-        @"iPad6,12": @"iPad (5th generation)", // Apple iPad 9.7 inch (5th generation) - WiFi + cellular
-        @"iPad7,1": @"iPad Pro 12.9-inch", // 2nd Generation iPad Pro 12.5-inch - Wifi
-        @"iPad7,2": @"iPad Pro 12.9-inch", // 2nd Generation iPad Pro 12.5-inch - Cellular
-        @"iPad7,3": @"iPad Pro 10.5-inch", // iPad Pro 10.5-inch - Wifi
-        @"iPad7,4": @"iPad Pro 10.5-inch", // iPad Pro 10.5-inch - Cellular
-        @"iPad7,5": @"iPad (6th generation)", // iPad (6th generation) - Wifi
-        @"iPad7,6": @"iPad (6th generation)", // iPad (6th generation) - Cellular
-        @"iPad7,11": @"iPad (7th generation)", // iPad 10.2 inch (7th generation) - Wifi
-        @"iPad7,12": @"iPad (7th generation)", // iPad 10.2 inch (7th generation) - Wifi + cellular
-        @"iPad8,1": @"iPad Pro 11-inch (3rd generation)", // iPad Pro 11 inch (3rd generation) - Wifi
-        @"iPad8,2": @"iPad Pro 11-inch (3rd generation)", // iPad Pro 11 inch (3rd generation) - 1TB - Wifi
-        @"iPad8,3": @"iPad Pro 11-inch (3rd generation)", // iPad Pro 11 inch (3rd generation) - Wifi + cellular
-        @"iPad8,4": @"iPad Pro 11-inch (3rd generation)", // iPad Pro 11 inch (3rd generation) - 1TB - Wifi + cellular
-        @"iPad8,5": @"iPad Pro 12.9-inch (3rd generation)", // iPad Pro 12.9 inch (3rd generation) - Wifi
-        @"iPad8,6": @"iPad Pro 12.9-inch (3rd generation)", // iPad Pro 12.9 inch (3rd generation) - 1TB - Wifi
-        @"iPad8,7": @"iPad Pro 12.9-inch (3rd generation)", // iPad Pro 12.9 inch (3rd generation) - Wifi + cellular
-        @"iPad8,8": @"iPad Pro 12.9-inch (3rd generation)", // iPad Pro 12.9 inch (3rd generation) - 1TB - Wifi + cellular
-        @"iPad11,1": @"iPad Mini 5", // (5th Generation iPad Mini)
-        @"iPad11,2": @"iPad Mini 5", // (5th Generation iPad Mini)
-        @"iPad11,3": @"iPad Air (3rd generation)",
+        @"iPhone14,4": @"iPhone 13 mini",
+        @"iPhone14,5": @"iPhone 13",
+        @"iPhone14,6": @"iPhone SE", // (3nd Generation iPhone SE),
+        @"iPhone14,7": @"iPhone 14",
+        @"iPhone14,8": @"iPhone 14 Plus",
+        @"iPhone15,2": @"iPhone 14 Pro",
+        @"iPhone15,3": @"iPhone 14 Pro Max",
+        @"iPhone15,4": @"iPhone 15",
+        @"iPhone15,5": @"iPhone 15 Plus",
+        @"iPhone16,1": @"iPhone 15 Pro",
+        @"iPhone16,2": @"iPhone 15 Pro Max",
+        @"iPhone17,1": @"iPhone 16 Pro",
+        @"iPhone17,2": @"iPhone 16 Pro Max",
+        @"iPhone17,3": @"iPhone 16",
+        @"iPhone17,4": @"iPhone 16 Plus",
+
+        @"iPod1,1": @"iPod Touch", // (Original)
+        @"iPod2,1": @"iPod Touch", // (Second Generation)
+        @"iPod3,1": @"iPod Touch", // (Third Generation)
+        @"iPod4,1": @"iPod Touch", // (Fourth Generation)
+        @"iPod5,1": @"iPod Touch", // (Fifth Generation)
+        @"iPod7,1": @"iPod Touch", // (Sixth Generation)
+        @"iPod9,1": @"iPod Touch", // (Seventh Generation)
+
+        @"iPad1,1": @"iPad",
+        @"iPad1,2": @"iPad 3G",
+        @"iPad2,1": @"iPad 2",
+        @"iPad2,2": @"iPad 2",
+        @"iPad2,3": @"iPad 2",
+        @"iPad2,4": @"iPad 2",
+        @"iPad3,1": @"iPad",
+        @"iPad3,2": @"iPad",
+        @"iPad3,3": @"iPad",
+        @"iPad2,5": @"iPad mini",
+        @"iPad2,6": @"iPad mini",
+        @"iPad2,7": @"iPad mini",
+        @"iPad3,4": @"iPad",
+        @"iPad3,5": @"iPad",
+        @"iPad3,6": @"iPad",
+        @"iPad4,1": @"iPad Air",
+        @"iPad4,2": @"iPad Air",
+        @"iPad4,3": @"iPad Air",
+        @"iPad4,4": @"iPad Mini 2",
+        @"iPad4,5": @"iPad Mini 2",
+        @"iPad4,6": @"iPad Mini 2",
+        @"iPad4,7": @"iPad Mini 3",
+        @"iPad4,8": @"iPad Mini 3",
+        @"iPad4,9": @"iPad Mini 3",
+        @"iPad5,1": @"iPad Mini 4",
+        @"iPad5,2": @"iPad Mini 4",
+        @"iPad5,3": @"iPad Air 2",
+        @"iPad5,4": @"iPad Air 2",
+        @"iPad6,3": @"iPad Pro 9.7-inch",
+        @"iPad6,4": @"iPad Pro 9.7-inch",
+        @"iPad6,7": @"iPad Pro 12.9-inch",
+        @"iPad6,8":@"iPad Pro 12.9-inch",
+        @"iPad6,11": @"iPad (5th generation)",
+        @"iPad6,12": @"iPad (5th generation)",
+        @"iPad7,1": @"iPad Pro 12.9-inch",
+        @"iPad7,2": @"iPad Pro 12.9-inch",
+        @"iPad7,3": @"iPad Pro 10.5-inch",
+        @"iPad7,4": @"iPad Pro 10.5-inch",
+        @"iPad7,5": @"iPad (6th generation)",
+        @"iPad7,6": @"iPad (6th generation)",
+        @"iPad7,11": @"iPad (7th generation)",
+        @"iPad7,12": @"iPad (7th generation)",
+        @"iPad8,1": @"iPad Pro 11-inch (3rd generation)",
+        @"iPad8,2": @"iPad Pro 11-inch (3rd generation)",
+        @"iPad8,3": @"iPad Pro 11-inch (3rd generation)",
+        @"iPad8,4": @"iPad Pro 11-inch (3rd generation)",
+        @"iPad8,5": @"iPad Pro 12.9-inch (3rd generation)",
+        @"iPad8,6": @"iPad Pro 12.9-inch (3rd generation)",
+        @"iPad8,7": @"iPad Pro 12.9-inch (3rd generation)",
+        @"iPad8,8": @"iPad Pro 12.9-inch (3rd generation)",
+        @"iPad8,9": @"iPad Pro 11-inch (4th generation)",
+        @"iPad8,10": @"iPad Pro 11-inch (4th generation)",
+        @"iPad8,11": @"iPad Pro 12.9-inch (4th generation)",
+        @"iPad8,12": @"iPad Pro 12.9-inch (4th generation)",
+        @"iPad11,1": @"iPad Mini 5",
+        @"iPad11,2": @"iPad Mini 5",
+        @"iPad11,3": @"iPad Air 3rd Gen (WiFi)",
         @"iPad11,4": @"iPad Air (3rd generation)",
+        @"iPad11,6": @"iPad Air (3rd generation)",
+        @"iPad11,7": @"iPad (8th generation)",
+        @"iPad12,1": @"iPad (9th generation)",
+        @"iPad12,2": @"iPad (9th generation)",
+        @"iPad14,1": @"iPad Mini (6th generation)",
+        @"iPad14,2": @"iPad Mini (6th generation)",
         @"iPad13,1": @"iPad Air (4th generation)",
         @"iPad13,2": @"iPad Air (4th generation)",
+        @"iPad13,4": @"iPad Pro 11-inch (5th generation)",
+        @"iPad13,5": @"iPad Pro 11-inch (5th generation)",
+        @"iPad13,6": @"iPad Pro 11-inch (5th generation)",
+        @"iPad13,7": @"iPad Pro 11-inch (5th generation)",
+        @"iPad13,8": @"iPad Pro 12.9-inch (5th generation)",
+        @"iPad13,9": @"iPad Pro 11-inch (5th generation)",
+        @"iPad13,10": @"iPad Pro 11-inch (5th generation)",
+        @"iPad13,11": @"iPad Pro 11-inch (5th generation)",
+        @"iPad13,16": @"iPad Air (5th generation)",
+        @"iPad13,17": @"iPad Air (5th generation)",
+        @"iPad13,18": @"iPad (10th generation)",
+        @"iPad13,19": @"iPad (10th generation)",
+        @"iPad14,3": @"iPad Pro 11-inch (4th generation)",
+        @"iPad14,4": @"iPad Pro 11-inch (4th generation)",
+        @"iPad14,5": @"iPad Pro 12.9-inch (6th generation)",
+        @"iPad14,6": @"iPad Pro 12.9-inch (6th generation)",
+        @"iPad14,8": @"iPad Air (6th generation)",
+        @"iPad14,9": @"iPad Air (6th generation)",
+        @"iPad14,10": @"iPad Air (7th generation)",
+        @"iPad14,11": @"iPad Air (7th generation)",
+        @"iPad16,3": @"iPad Pro 11-inch (5th generation)",
+        @"iPad16,4": @"iPad Pro 11-inch (5th generation)",
+        @"iPad16,5": @"iPad Pro 12.9-inch (7th generation)",
+        @"iPad16,6": @"iPad Pro 12.9-inch (7th generation)",
+
         @"AppleTV2,1": @"Apple TV", // Apple TV (2nd Generation)
         @"AppleTV3,1": @"Apple TV", // Apple TV (3rd Generation)
         @"AppleTV3,2": @"Apple TV", // Apple TV (3rd Generation - Rev A)
         @"AppleTV5,3": @"Apple TV", // Apple TV (4th Generation)
-        @"AppleTV6,2": @"Apple TV 4K" // Apple TV 4K
+        @"AppleTV6,2": @"Apple TV 4K", // Apple TV 4K
+
+        @"RealityDevice14,1": @"Apple Vision Pro" // Apple Vision Pro
     };
 }
 
@@ -309,6 +389,8 @@ RCT_EXPORT_METHOD(getDeviceName:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
         return @"iPhone";
     } else if ([deviceId hasPrefix:@"AppleTV"]) {
         return @"Apple TV";
+    } else if ([deviceId hasPrefix:@"RealityDevice"]) {
+        return @"Apple Vision";
     }
 
     // If we could not even get a generic, it's unknown
@@ -316,7 +398,7 @@ RCT_EXPORT_METHOD(getDeviceName:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
 }
 
 - (NSString *) getCarrier {
-#if (TARGET_OS_TV || TARGET_OS_MACCATALYST)
+#if (TARGET_OS_TV || TARGET_OS_MACCATALYST || TARGET_OS_VISION)
     return @"unknown";
 #else
     CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
@@ -359,8 +441,16 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getBuildIdSync) {
     return self.getBuildId;
 }
 
-- (NSString *) getUniqueId {
+- (NSString *) uniqueId {
     return [DeviceUID uid];
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getUniqueIdSync) {
+    return self.uniqueId;
+}
+
+RCT_EXPORT_METHOD(getUniqueId:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+    resolve(self.uniqueId);
 }
 
 RCT_EXPORT_METHOD(syncUniqueId:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
@@ -434,32 +524,35 @@ RCT_EXPORT_METHOD(getDeviceToken:(RCTPromiseResolveBlock)resolve rejecter:(RCTPr
 - (float) getFontScale {
     // Font scales based on font sizes from https://developer.apple.com/ios/human-interface-guidelines/visual-design/typography/
     float fontScale = 1.0;
-    UITraitCollection *traitCollection = [[UIScreen mainScreen] traitCollection];
 
-    // Shared application is unavailable in an app extension.
-    if (traitCollection) {
-        __block NSString *contentSize = nil;
-        RCTUnsafeExecuteOnMainQueueSync(^{
-            if (@available(iOS 10.0, tvOS 10.0, macCatalyst 13.0, *)) {
-                contentSize = traitCollection.preferredContentSizeCategory;
-            } else {
-                // if we can't get contentSize, we'll fall back to 1.0
-            }
-        });
+    #if !TARGET_OS_VISION
+        UITraitCollection *traitCollection = [[UIScreen mainScreen] traitCollection];
 
-        if ([contentSize isEqual: @"UICTContentSizeCategoryXS"]) fontScale = 0.82;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryS"]) fontScale = 0.88;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryM"]) fontScale = 0.95;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryL"]) fontScale = 1.0;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryXL"]) fontScale = 1.12;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryXXL"]) fontScale = 1.23;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryXXXL"]) fontScale = 1.35;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityM"]) fontScale = 1.64;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityL"]) fontScale = 1.95;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityXL"]) fontScale = 2.35;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityXXL"]) fontScale = 2.76;
-        else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityXXXL"]) fontScale = 3.12;
-    }
+        // Shared application is unavailable in an app extension.
+        if (traitCollection) {
+            __block NSString *contentSize = nil;
+            RCTUnsafeExecuteOnMainQueueSync(^{
+                if (@available(iOS 10.0, tvOS 10.0, macCatalyst 13.0, *)) {
+                    contentSize = traitCollection.preferredContentSizeCategory;
+                } else {
+                    // if we can't get contentSize, we'll fall back to 1.0
+                }
+            });
+
+            if ([contentSize isEqual: @"UICTContentSizeCategoryXS"]) fontScale = 0.82;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryS"]) fontScale = 0.88;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryM"]) fontScale = 0.95;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryL"]) fontScale = 1.0;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryXL"]) fontScale = 1.12;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryXXL"]) fontScale = 1.23;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryXXXL"]) fontScale = 1.35;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityM"]) fontScale = 1.64;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityL"]) fontScale = 1.95;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityXL"]) fontScale = 2.35;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityXXL"]) fontScale = 2.76;
+            else if ([contentSize isEqual: @"UICTContentSizeCategoryAccessibilityXXXL"]) fontScale = 3.12;
+        }
+    #endif
 
     return fontScale;
 }
@@ -503,23 +596,67 @@ RCT_EXPORT_METHOD(getTotalDiskCapacity:(RCTPromiseResolveBlock)resolve rejecter:
     resolve(@(self.getTotalDiskCapacity));
 }
 
-- (double) getFreeDiskStorage {
-    uint64_t freeSpace = 0;
-    NSDictionary *storage = [self getStorageDictionary];
+- (double)getFreeDiskStorage:(NSString *)storageType {
+    NSError *error = nil;
 
-    if (storage) {
-        NSNumber *freeFileSystemSizeInBytes = [storage objectForKey: NSFileSystemFreeSize];
-        freeSpace = [freeFileSystemSizeInBytes unsignedLongLongValue];
+    // iOS 11 and above: Use NSURLVolumeAvailableCapacityForImportantUsageKey
+    // https://developer.apple.com/documentation/foundation/urlresourcekey/checking_volume_storage_capacity
+    if (@available(iOS 11.0, *)) {
+        NSURL *fileURL = [NSURL fileURLWithPath:NSHomeDirectory()];
+        NSString *capacityKey = [self keyForStorageType:storageType];
+        NSDictionary *storageValues = [fileURL resourceValuesForKeys:@[capacityKey] error:&error];
+
+        if (error) {
+            NSLog(@"Error retrieving storage information: %@", error);
+            return 0;
+        }
+
+        NSNumber *availableCapacity = [storageValues objectForKey:capacityKey];
+        if (availableCapacity) {
+            return (double)[availableCapacity unsignedLongLongValue];
+        }
+    } else {
+        // Fallback for older iOS versions: Use NSFileSystemFreeSize
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSDictionary *dictionary = [[NSFileManager defaultManager] attributesOfFileSystemForPath:[paths lastObject] error:&error];
+
+        if (error) {
+            NSLog(@"Error retrieving fallback storage information: %@", error);
+            return 0;
+        }
+
+        NSNumber *freeFileSystemSizeInBytes = [dictionary objectForKey:NSFileSystemFreeSize];
+        if (freeFileSystemSizeInBytes) {
+            return (double)[freeFileSystemSizeInBytes unsignedLongLongValue];
+        }
     }
-    return (double) freeSpace;
+
+    return 0;
 }
 
-RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getFreeDiskStorageSync) {
-    return @(self.getFreeDiskStorage);
+- (NSString *)keyForStorageType:(NSString *)storageType {
+#if TARGET_OS_TV
+    return NSURLVolumeAvailableCapacityKey;
+#else
+    if ([storageType isEqualToString:@"important"]) {
+        return NSURLVolumeAvailableCapacityForImportantUsageKey;
+    } else if ([storageType isEqualToString:@"opportunistic"]) {
+        return NSURLVolumeAvailableCapacityForOpportunisticUsageKey;
+    } else {
+        return NSURLVolumeAvailableCapacityKey;
+    }
+#endif
 }
 
-RCT_EXPORT_METHOD(getFreeDiskStorage:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
-    resolve(@(self.getFreeDiskStorage));
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getFreeDiskStorageSync:(NSString *)storageType) {
+    return @([self getFreeDiskStorage:storageType]);
+}
+
+RCT_EXPORT_METHOD(getFreeDiskStorage:(NSString *)storageType
+                            resolver:(RCTPromiseResolveBlock)resolve
+                            rejecter:(RCTPromiseRejectBlock)reject) {
+    double freeStorage = [self getFreeDiskStorage:storageType];
+    resolve(@(freeStorage));
 }
 
 - (NSString *) getDeviceTypeName {
@@ -635,6 +772,29 @@ RCT_EXPORT_METHOD(isPinOrFingerprintSet:(RCTPromiseResolveBlock)resolve rejecter
     [self sendEventWithName:@"RNDeviceInfo_headphoneConnectionDidChange" body:[NSNumber numberWithBool:isConnected]];
 }
 
+- (void) headphoneWiredConnectionDidChange:(NSNotification *)notification {
+    if (!hasListeners) {
+        return;
+    }
+    BOOL isConnected = [self isWiredHeadphonesConnected];
+    [self sendEventWithName:@"RNDeviceInfo_headphoneWiredConnectionDidChange" body:[NSNumber numberWithBool:isConnected]];
+}
+
+- (void) headphoneBluetoothConnectionDidChange:(NSNotification *)notification {
+    if (!hasListeners) {
+        return;
+    }
+    BOOL isConnected = [self isBluetoothHeadphonesConnected];
+    [self sendEventWithName:@"RNDeviceInfo_headphoneBluetoothConnectionDidChange" body:[NSNumber numberWithBool:isConnected]];
+}
+
+- (void) brightnessDidChange:(NSNotification *)notification {
+    if (!hasListeners) {
+        return;
+    }
+    [self sendEventWithName:@"RNDeviceInfo_brightnessDidChange" body:self.getBrightness];
+}
+
 - (NSDictionary *) powerState {
 #if RCT_DEV && (!TARGET_IPHONE_SIMULATOR) && !TARGET_OS_TV
     if ([UIDevice currentDevice].isBatteryMonitoringEnabled != true) {
@@ -733,6 +893,45 @@ RCT_EXPORT_METHOD(isHeadphonesConnected:(RCTPromiseResolveBlock)resolve rejecter
     resolve(@(self.isHeadphonesConnected));
 }
 
+- (BOOL) isWiredHeadphonesConnected {
+    AVAudioSessionRouteDescription* route = [[AVAudioSession sharedInstance] currentRoute];
+    for (AVAudioSessionPortDescription* desc in [route outputs]) {
+        if ([[desc portType] isEqualToString:AVAudioSessionPortHeadphones]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(isWiredHeadphonesConnectedSync) {
+    return @(self.isWiredHeadphonesConnected);
+}
+
+RCT_EXPORT_METHOD(isWiredHeadphonesConnected:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+    resolve(@(self.isWiredHeadphonesConnected));
+}
+
+- (BOOL) isBluetoothHeadphonesConnected {
+    AVAudioSessionRouteDescription* route = [[AVAudioSession sharedInstance] currentRoute];
+    for (AVAudioSessionPortDescription* desc in [route outputs]) {
+        if ([[desc portType] isEqualToString:AVAudioSessionPortBluetoothA2DP]) {
+            return YES;
+        }
+        if ([[desc portType] isEqualToString:AVAudioSessionPortBluetoothHFP]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(isBluetoothHeadphonesConnectedSync) {
+    return @(self.isBluetoothHeadphonesConnected);
+}
+
+RCT_EXPORT_METHOD(isBluetoothHeadphonesConnected:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+    resolve(@(self.isBluetoothHeadphonesConnected));
+}
+
 - (unsigned long) getUsedMemory {
     struct task_basic_info info;
     mach_msg_type_number_t size = sizeof(info);
@@ -816,6 +1015,62 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getInstallerPackageNameSync) {
 
 RCT_EXPORT_METHOD(getInstallerPackageName:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
     resolve([EnvironmentValues objectAtIndex:[EnvironmentUtil currentAppEnvironment]]);
+}
+
+- (NSNumber *) getBrightness {
+#if !TARGET_OS_TV && !TARGET_OS_VISION
+    return @([UIScreen mainScreen].brightness);
+#else
+    return @(-1);
+#endif
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getBrightnessSync) {
+    return self.getBrightness;
+}
+
+RCT_EXPORT_METHOD(getBrightness:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+    resolve(self.getBrightness);
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getFirstInstallTimeSync) {
+    return @(self.getFirstInstallTime);
+}
+
+RCT_EXPORT_METHOD(getFirstInstallTime:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+    resolve(@(self.getFirstInstallTime));
+}
+
+- (long long) getFirstInstallTime {
+    NSURL* urlToDocumentsFolder = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+    NSError *error;
+    NSDate *installDate = [[[NSFileManager defaultManager] attributesOfItemAtPath:urlToDocumentsFolder.path error:&error] objectForKey:NSFileCreationDate];
+    return [@(floor([installDate timeIntervalSince1970] * 1000)) longLongValue];
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getStartupTimeSync) {
+    return @(self.getStartupTime);
+}
+
+RCT_EXPORT_METHOD(getStartupTime:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+    resolve(@(self.getStartupTime));
+}
+ 
+// Reads the process startup time and returns it in milliseconds since 1970
+// Reading the process startup time from the system is more accurate than comparing a date which is initiallized at launch with the current time
+- (long long) getStartupTime {
+    size_t len = 4;
+    int mib[len];
+    struct kinfo_proc kp;
+
+    sysctlnametomib("kern.proc.pid", mib, &len);
+    mib[3] = getpid();
+    len = sizeof(kp);
+    sysctl(mib, 4, &kp, &len, NULL, 0);
+
+    struct timeval startTime = kp.kp_proc.p_un.__p_starttime;
+    double startTimeMilliSeconds = startTime.tv_sec * 1e3 + startTime.tv_usec / 1e3;
+    return [@(floor(startTimeMilliSeconds)) longLongValue];
 }
 
 #pragma mark - dealloc -

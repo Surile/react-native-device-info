@@ -13,6 +13,7 @@ function makeTable(name: string) {
   ];
 }
 const memoizedStringGetters = [
+  'getUniqueId',
   'getInstanceId',
   'getSerialNumber',
   'getAndroidId',
@@ -45,7 +46,6 @@ const nonMemoizedStringGetters = [
   'getMacAddress',
   'getIpAddress',
   'getDeviceName',
-  'getPhoneNumber',
   'getCarrier',
 ].map(makeTable);
 
@@ -159,7 +159,6 @@ describe('string getters', () => {
     'getApplicationName',
     'getBuildNumber',
     'getVersion',
-    'getUniqueId',
   ].map((name) => [name, (RNDeviceInfo as any)[name]]);
 
   describe.each(iosAndroidWindows)('%s*', (_name, fn) => {
@@ -507,6 +506,8 @@ const nonMemoizedBooleanGetters = [
   'isAirplaneMode',
   'isLocationEnabled',
   'isHeadphonesConnected',
+  'isWiredHeadphonesConnected',
+  'isBluetoothHeadphonesConnected',
 ].map(makeTable);
 
 describe('boolean getters', () => {

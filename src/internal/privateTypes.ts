@@ -1,5 +1,11 @@
 import { Platform } from 'react-native';
-import type { DeviceType, LocationProviderInfo, PowerState, AsyncHookResult } from './types';
+import type {
+  DeviceType,
+  LocationProviderInfo,
+  PowerState,
+  AsyncHookResult,
+  AvailableCapacityType,
+} from './types';
 
 export type NotchDevice = {
   brand: string;
@@ -17,10 +23,11 @@ interface NativeConstants {
   deviceId: string;
   deviceType: DeviceType;
   isTablet: boolean;
+  isLowRamDevice: boolean;
+  isDisplayZoomed: boolean;
   model: string;
   systemName: string;
   systemVersion: string;
-  uniqueId: string;
 }
 
 interface HiddenNativeMethods {
@@ -68,14 +75,16 @@ interface ExposedNativeMethods {
   getFirstInstallTimeSync: () => number;
   getFontScale: () => Promise<number>;
   getFontScaleSync: () => number;
-  getFreeDiskStorage: () => Promise<number>;
+  getFreeDiskStorage: (storageType?: AvailableCapacityType) => Promise<number>;
   getFreeDiskStorageOld: () => Promise<number>;
-  getFreeDiskStorageSync: () => number;
+  getFreeDiskStorageSync: (storageType?: AvailableCapacityType) => number;
   getFreeDiskStorageOldSync: () => number;
   getHardware: () => Promise<string>;
   getHardwareSync: () => string;
   getHost: () => Promise<string>;
   getHostSync: () => string;
+  getHostNames: () => Promise<string[]>;
+  getHostNamesSync: () => string[];
   getIncremental: () => Promise<string>;
   getIncrementalSync: () => string;
   getInstallerPackageName: () => Promise<string>;
@@ -92,8 +101,6 @@ interface ExposedNativeMethods {
   getMacAddressSync: () => string;
   getMaxMemory: () => Promise<number>;
   getMaxMemorySync: () => number;
-  getPhoneNumber: () => Promise<string>;
-  getPhoneNumberSync: () => string;
   getPreviewSdkInt: () => Promise<number>;
   getPreviewSdkIntSync: () => number;
   getProduct: () => Promise<string>;
@@ -102,6 +109,8 @@ interface ExposedNativeMethods {
   getSecurityPatchSync: () => string;
   getSerialNumber: () => Promise<string>;
   getSerialNumberSync: () => string;
+  getStartupTime: () => Promise<number>;
+  getStartupTimeSync: () => number;
   getSystemAvailableFeatures: () => Promise<string[]>;
   getSystemAvailableFeaturesSync: () => string[];
   getTags: () => Promise<string>;
@@ -114,10 +123,14 @@ interface ExposedNativeMethods {
   getTotalMemorySync: () => number;
   getType: () => Promise<string>;
   getTypeSync: () => string;
+  getUniqueId: () => Promise<string>;
+  getUniqueIdSync: () => string;
   getUsedMemory: () => Promise<number>;
   getUsedMemorySync: () => number;
   getUserAgent: () => Promise<string>;
   getUserAgentSync: () => string;
+  getBrightness: () => Promise<number>;
+  getBrightnessSync: () => number;
   hasGms: () => Promise<boolean>;
   hasGmsSync: () => boolean;
   hasHms: () => Promise<boolean>;
@@ -134,6 +147,10 @@ interface ExposedNativeMethods {
   isEmulatorSync: () => boolean;
   isHeadphonesConnected: () => Promise<boolean>;
   isHeadphonesConnectedSync: () => boolean;
+  isWiredHeadphonesConnected: () => Promise<boolean>;
+  isWiredHeadphonesConnectedSync: () => boolean;
+  isBluetoothHeadphonesConnected: () => Promise<boolean>;
+  isBluetoothHeadphonesConnectedSync: () => boolean;
   isLocationEnabled: () => Promise<boolean>;
   isLocationEnabledSync: () => boolean;
   isPinOrFingerprintSet: () => Promise<boolean>;
@@ -144,6 +161,8 @@ interface ExposedNativeMethods {
   isKeyboardConnectedSync: () => boolean;
   isTabletMode: () => Promise<boolean>;
   syncUniqueId: () => Promise<string>;
+  getSupportedMediaTypeList: () => Promise<string[]>;
+  getSupportedMediaTypeListSync: () => string[];
 }
 
 export interface DeviceInfoNativeModule
@@ -166,14 +185,18 @@ export interface DeviceInfoModule extends ExposedNativeMethods {
   getReadableVersion: () => string;
   getSystemName: () => string;
   getSystemVersion: () => string;
-  getUniqueId: () => string;
+  getUniqueId: () => Promise<string>;
+  getUniqueIdSync: () => string;
   getVersion: () => string;
   hasNotch: () => boolean;
+  hasDynamicIsland: () => boolean;
   hasSystemFeature: (feature: string) => Promise<boolean>;
   hasSystemFeatureSync: (feature: string) => boolean;
   isLandscape: () => Promise<boolean>;
   isLandscapeSync: () => boolean;
   isTablet: () => boolean;
+  isLowRamDevice: () => boolean;
+  isDisplayZoomed: () => boolean;
   supported32BitAbis: () => Promise<string[]>;
   supported32BitAbisSync: () => string[];
   supported64BitAbis: () => Promise<string[]>;
@@ -189,9 +212,12 @@ export interface DeviceInfoModule extends ExposedNativeMethods {
   usePowerState: () => Partial<PowerState>;
   useManufacturer: () => AsyncHookResult<string>;
   useIsHeadphonesConnected: () => AsyncHookResult<boolean>;
+  useIsWiredHeadphonesConnected: () => AsyncHookResult<boolean>;
+  useIsBluetoothHeadphonesConnected: () => AsyncHookResult<boolean>;
+  useBrightness: () => number | null;
 }
 
-export type Getter<T> = () => T;
+export type Getter<T> = (...args: any[]) => T;
 export type PlatformArray = typeof Platform.OS[];
 
 export interface GetSupportedPlatformInfoSyncParams<T> {

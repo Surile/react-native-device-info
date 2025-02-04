@@ -14,7 +14,6 @@ const [objectFnAsync, objectFnSync] = makeFns({});
 
 const RNDeviceInfo: any = {};
 const stringKeys = [
-  'uniqueId',
   'deviceId',
   'model',
   'brand',
@@ -41,6 +40,7 @@ RNDeviceInfo.getDeviceToken = stringFnSync();
 
 // string getters
 const stringFnNames = [
+  'getUniqueId',
   'getInstanceId',
   'getSerialNumber',
   'getAndroidId',
@@ -64,7 +64,6 @@ const stringFnNames = [
   'getSecurityPatch',
   'getCodename',
   'getIncremental',
-  'getPhoneNumber',
   'getCarrier',
   'getInstallReferrer',
 ];
@@ -83,6 +82,8 @@ const booleanFnNames = [
   'hasSystemFeature',
   'isLocationEnabled',
   'isHeadphonesConnected',
+  'isWiredHeadphonesConnected',
+  'isBluetoothHeadphonesConnected',
 ];
 for (const name of booleanFnNames) {
   RNDeviceInfo[name] = booleanFnAsync();
@@ -143,7 +144,4 @@ jest.mock('react-native', () => {
 
 jest.mock('./src/internal/nativeInterface', () => ({ default: RNDeviceInfo }));
 
-jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter.js', () => {
-  const { EventEmitter } = require('events');
-  return EventEmitter;
-});
+jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter');

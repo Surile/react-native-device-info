@@ -6,15 +6,13 @@
 #include <sstream>
 #include <chrono>
 #include <future>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Networking.Connectivity.h>
 
 using namespace winrt::Microsoft::ReactNative;
 using namespace winrt::Windows::Foundation;
-
-#ifdef RNW61
-#define JSVALUEOBJECTPARAMETER
-#else
-#define JSVALUEOBJECTPARAMETER const &
-#endif
+using namespace winrt::Windows::Networking;
+using namespace winrt::Windows::Networking::Connectivity;
 
 namespace winrt::RNDeviceInfoCPP
 {
@@ -25,14 +23,18 @@ namespace winrt::RNDeviceInfoCPP
 
     ReactContext m_reactContext;
     REACT_INIT(Initialize)
-    void Initialize(ReactContext const& reactContext) noexcept {
+    void Initialize(ReactContext const &reactContext) noexcept
+    {
       m_reactContext = reactContext;
+      Windows::System::Power::PowerManager::EnergySaverStatusChanged([&](
+          const auto&, winrt::Windows::Foundation::IInspectable obj) { OnEnergySaverStatusChanged(); });
+      Windows::Devices::Power::Battery::AggregateBattery().ReportUpdated([&](
+          const auto&, winrt::Windows::Foundation::IInspectable obj) { OnBatteryReportUpdated(); });
     }
 
     REACT_CONSTANT_PROVIDER(constantsViaConstantsProvider);
     void constantsViaConstantsProvider(ReactConstantProvider& provider) noexcept
     {
-      provider.Add(L"uniqueId", getUniqueIdSync());
       provider.Add(L"deviceId", getDeviceIdSync());
       provider.Add(L"serialNumber", getSerialNumberSync());
       provider.Add(L"bundleId", getBundleIdSync());
@@ -44,6 +46,7 @@ namespace winrt::RNDeviceInfoCPP
       provider.Add(L"brand", getBrandSync());
       provider.Add(L"model", getModelSync());
       provider.Add(L"deviceType", getDeviceTypeSync());
+      provider.Add(L"supportedAbis", getSupportedAbisSync());
     }
 
     bool isEmulatorHelper(std::string model)
@@ -79,23 +82,67 @@ namespace winrt::RNDeviceInfoCPP
       {
         auto ucAvailability = co_await Windows::Security::Credentials::UI::UserConsentVerifier::CheckAvailabilityAsync();
         return ucAvailability == Windows::Security::Credentials::UI::UserConsentVerifierAvailability::Available;
-      } catch (...)
+      }
+      catch (...)
       {
         return false;
       }
+    }
+
+    REACT_SYNC_METHOD(getSupportedAbisSync);
+    JSValueArray getSupportedAbisSync() noexcept
+    {
+        JSValueArray result = JSValueArray{};
+        winrt::Windows::System::ProcessorArchitecture architecture = 
+            winrt::Windows::ApplicationModel::Package::Current().Id().Architecture();
+        std::string arch;
+        switch (architecture)
+        {
+        case Windows::System::ProcessorArchitecture::X86:
+            arch = "win_x86";
+            break;
+        case Windows::System::ProcessorArchitecture::Arm:
+            arch = "win_arm";
+            break;
+        case Windows::System::ProcessorArchitecture::X64:
+            arch = "win_x64";
+            break;
+        case Windows::System::ProcessorArchitecture::Neutral:
+            arch = "neutral";
+	    break;
+        case Windows::System::ProcessorArchitecture::Arm64:
+            arch = "win_arm64";
+	    break;
+        case Windows::System::ProcessorArchitecture::X86OnArm64:
+            arch = "win_x86onarm64";
+            break;
+        default:
+            arch = "unknown";
+            break;
+        }
+        result.push_back(arch);
+        return result;
+    }
+    
+    REACT_METHOD(getSupportedAbis)
+    void getSupportedAbis(ReactPromise<JSValueArray> promise) noexcept
+    {
+        promise.Resolve(getSupportedAbisSync());
     }
 	
     REACT_SYNC_METHOD(getDeviceTypeSync);
     std::string getDeviceTypeSync() noexcept
     {
-      if (isTabletHelper()) {
+      if (isTabletHelper())
+      {
         return "Tablet";
       }
       else if (winrt::Windows::System::Profile::AnalyticsInfo::VersionInfo().DeviceFamily() == L"Windows.Xbox")
       {
         return "GamingConsole";
       }
-      else {
+      else
+      {
         return "Desktop";
       }
     }
@@ -168,8 +215,7 @@ namespace winrt::RNDeviceInfoCPP
           {
             promise.Resolve(false);
           }
-        }
-      });
+        } });
     }
 
     REACT_SYNC_METHOD(getIpAddressSync);
@@ -179,7 +225,8 @@ namespace winrt::RNDeviceInfoCPP
       if (!icp || !icp.NetworkAdapter())
       {
         return "unknown";
-      } else
+      }
+      else
       {
         auto hostnames = Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
         for (auto const& hostname : hostnames)
@@ -236,16 +283,23 @@ namespace winrt::RNDeviceInfoCPP
         report.RemainingCapacityInMilliwattHours() == nullptr)
       {
         return (double)-1;
-      } else
+      }
+      else
       {
         auto max = report.FullChargeCapacityInMilliwattHours().GetDouble();
         auto value = report.RemainingCapacityInMilliwattHours().GetDouble();
         if (max <= 0)
         {
           return (double)-1;
-        } else
+        }
+        else
         {
-          return value / max;
+          auto result = value / max;
+          if (result <= 0.2)
+          {
+              m_reactContext.EmitJSEvent(L"RCTDeviceEventEmitter", L"RNDeviceInfo_batteryLevelIsLow", result);
+          }
+          return result;
         }
       }
     }
@@ -271,7 +325,8 @@ namespace winrt::RNDeviceInfoCPP
         if (max <= 0)
         {
           result["batteryLevel"] = (double)-1;
-        } else
+        }
+        else
         {
           result["batteryLevel"] = value / max;
         }
@@ -301,7 +356,6 @@ namespace winrt::RNDeviceInfoCPP
     {
       promise.Resolve(isBatteryChargingSync());
     }
-
 
     REACT_SYNC_METHOD(getAppVersionSync);
     std::string getAppVersionSync() noexcept
@@ -501,7 +555,8 @@ namespace winrt::RNDeviceInfoCPP
         std::ostringstream ostream;
         ostream << major << "." << minor;
         return ostream.str();
-      } catch (...)
+      }
+      catch (...)
       {
         return "unknown";
       }
@@ -527,7 +582,8 @@ namespace winrt::RNDeviceInfoCPP
         std::ostringstream ostream;
         ostream << major << "." << minor << "." << build << "." << revision;
         return ostream.str();
-      } catch (...)
+      }
+      catch (...)
       {
         return "unknown";
       }
@@ -550,7 +606,8 @@ namespace winrt::RNDeviceInfoCPP
         std::ostringstream ostream;
         ostream << build;
         return ostream.str();
-      } catch (...)
+      }
+      catch (...)
       {
         return "unknown";
       }
@@ -568,7 +625,8 @@ namespace winrt::RNDeviceInfoCPP
       try
       {
         return winrt::to_string(Windows::Security::ExchangeActiveSyncProvisioning::EasClientDeviceInformation().SystemProductName());
-      } catch (...)
+      }
+      catch (...)
       {
         return "unknown";
       }
@@ -785,7 +843,65 @@ namespace winrt::RNDeviceInfoCPP
           promise.Resolve(op.GetResults());
         });
     }
+	
+    REACT_SYNC_METHOD(getHostSync);
+    std::string getHostSync() noexcept
+    {
+        try
+        {
+            return winrt::to_string(NetworkInformation::GetHostNames().GetAt(0).DisplayName());
+        }
+        catch (...)
+        {
+            return "unknown";
+        }
+    }
 
+    REACT_METHOD(getHost);
+    void getHost(ReactPromise<std::string> promise) noexcept
+    {
+        promise.Resolve(getHostSync());
+    }
+
+    REACT_SYNC_METHOD(getHostNamesSync);
+    JSValueArray getHostNamesSync() noexcept
+    {
+         JSValueArray result = JSValueArray{};
+        winrt::Windows::Foundation::Collections::IVectorView<HostName> hostNames = NetworkInformation::GetHostNames();
+        for (HostName hostName : hostNames)
+        {
+            result.push_back(winrt::to_string(hostName.DisplayName()));
+        }
+
+        return result;
+    }
+    
+    REACT_METHOD(getHostNames)
+    void getHostNames(ReactPromise<JSValueArray> promise) noexcept
+    {
+        promise.Resolve(getHostNamesSync());
+    }
+
+    REACT_METHOD(addListener);
+    void addListener(std::string) noexcept
+    {
+        // Keep: Required for RN built in Event Emitter Calls.
+    }
+
+    REACT_METHOD(removeListeners);
+    void removeListeners(int64_t) noexcept
+    {
+        // Keep: Required for RN built in Event Emitter Calls.
+    }
+
+    void OnEnergySaverStatusChanged()
+    {
+        m_reactContext.EmitJSEvent(L"RCTDeviceEventEmitter", L"RNDeviceInfo_powerStateDidChange", getPowerStateSync());
+    }
+    void OnBatteryReportUpdated()
+    {
+        m_reactContext.EmitJSEvent(L"RCTDeviceEventEmitter", L"RNDeviceInfo_batteryLevelDidChange", getBatteryLevelSync());
+    }
   };
 
 }

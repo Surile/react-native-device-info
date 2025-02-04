@@ -1,3 +1,393 @@
+## [14.0.4](https://github.com/react-native-device-info/react-native-device-info/compare/v14.0.3...v14.0.4) (2025-02-03)
+
+
+### Bug Fixes
+
+* **android:** quiet a build warning for users ([07017cb](https://github.com/react-native-device-info/react-native-device-info/commit/07017cbf82680e5602a01f1f254380cafba1eee5))
+
+## [14.0.3](https://github.com/react-native-device-info/react-native-device-info/compare/v14.0.2...v14.0.3) (2025-02-03)
+
+
+### Bug Fixes
+
+* **android:** restore compatibility for Android <= 23 ([75ea74e](https://github.com/react-native-device-info/react-native-device-info/commit/75ea74ec6dd75c65d5b168bbd4b56ac1cace6e3e))
+
+## [14.0.2](https://github.com/react-native-device-info/react-native-device-info/compare/v14.0.1...v14.0.2) (2024-12-17)
+
+
+### Bug Fixes
+
+* **tvos:** fix build errors for tvos ([#1670](https://github.com/react-native-device-info/react-native-device-info/issues/1670)) ([#1684](https://github.com/react-native-device-info/react-native-device-info/issues/1684)) ([f750f26](https://github.com/react-native-device-info/react-native-device-info/commit/f750f26365492b8f0676158b06ed7874fd2aac8a))
+
+## [14.0.1](https://github.com/react-native-device-info/react-native-device-info/compare/v14.0.0...v14.0.1) (2024-11-23)
+
+
+### Bug Fixes
+
+* **windows:** Update RNDeviceInfoCPP.h for windows on ARM CPU arch on windows ([#1679](https://github.com/react-native-device-info/react-native-device-info/issues/1679)) ([b2c7c4f](https://github.com/react-native-device-info/react-native-device-info/commit/b2c7c4fdbc2d36dda15b5c1996b556cf4d4d499f))
+
+# [14.0.0](https://github.com/react-native-device-info/react-native-device-info/compare/v13.2.0...v14.0.0) (2024-10-26)
+
+
+* fix(android)!: remove AD_ID permission by removing auto-addition of play-services-iid (#1673) ([5009115](https://github.com/react-native-device-info/react-native-device-info/commit/500911526869a4e5cb3443174e3b5b241603b33d)), closes [#1673](https://github.com/react-native-device-info/react-native-device-info/issues/1673)
+
+
+### BREAKING CHANGES
+
+* removed default fallback getInstanceId via play-services-iid dependency
+
+This dependency has the unfortunate side effect of including AD_ID permission, which is
+not permissible for many types of applications.
+
+If you relied on this functionality, you will need to define googlePlayServicesIidVersion in your
+android gradle build files ext version block. We previously used version 17.0.0 but there may be
+newer versions you could use if they work for
+
+# [13.2.0](https://github.com/react-native-device-info/react-native-device-info/compare/v13.1.0...v13.2.0) (2024-10-25)
+
+
+### Features
+
+* add getStartupTime ([#1644](https://github.com/react-native-device-info/react-native-device-info/issues/1644)) ([d390995](https://github.com/react-native-device-info/react-native-device-info/commit/d39099555c8bd9357266ee78d46632e4faee2faa))
+
+# [13.1.0](https://github.com/react-native-device-info/react-native-device-info/compare/v13.0.0...v13.1.0) (2024-10-11)
+
+
+### Features
+
+* **ios:** implement all free disk storage types for ios 11+ ([#1664](https://github.com/react-native-device-info/react-native-device-info/issues/1664)) ([99dc37c](https://github.com/react-native-device-info/react-native-device-info/commit/99dc37c771579f73d60c60874bf6480af3b895f9))
+
+# [13.0.0](https://github.com/react-native-device-info/react-native-device-info/compare/v12.1.0...v13.0.0) (2024-09-12)
+
+
+* fix(android)!: powerStateDidChange event returns powerState object not batteryState (#1655) ([2d91018](https://github.com/react-native-device-info/react-native-device-info/commit/2d9101828fbab147980eb17724a801809f705195)), closes [#1655](https://github.com/react-native-device-info/react-native-device-info/issues/1655)
+
+
+### BREAKING CHANGES
+
+* android powerStateDidChange now matches iOS with full powerState object not batteryState
+
+The batteryState object is inside the powerState object, so if this is important to you, the change on android is now
+to go one-level deeper to get the batteryState
+
+# [12.1.0](https://github.com/react-native-device-info/react-native-device-info/compare/v12.0.1...v12.1.0) (2024-09-12)
+
+
+### Bug Fixes
+
+* **ios:** isDisplayZoomed on iPhone 12/13 mini ([12fd354](https://github.com/react-native-device-info/react-native-device-info/commit/12fd354bfbc33d1b67feba0131c2d572e295c211)), closes [#1581](https://github.com/react-native-device-info/react-native-device-info/issues/1581) [#1581](https://github.com/react-native-device-info/react-native-device-info/issues/1581)
+* RNInstallReferrerClient to use background threads for network operations to prevent ANR ([2afb771](https://github.com/react-native-device-info/react-native-device-info/commit/2afb77155d457b23932f52bd44e0572f77781ba6))
+
+
+### Features
+
+* **ios:** add iPhone 16 device names / add missing iPad device names ([#1657](https://github.com/react-native-device-info/react-native-device-info/issues/1657)) ([1c85272](https://github.com/react-native-device-info/react-native-device-info/commit/1c85272a1714dfb41599ebc00557fb2e0bd5c45e))
+
+## [12.0.1](https://github.com/react-native-device-info/react-native-device-info/compare/v12.0.0...v12.0.1) (2024-09-12)
+
+
+### Bug Fixes
+
+* **android:** add invalidate, use it from onCatalystInstanceDestroy ([610714b](https://github.com/react-native-device-info/react-native-device-info/commit/610714b2400b700d95bd6924928161d38c85bb50))
+
+# [12.0.0](https://github.com/react-native-device-info/react-native-device-info/compare/v11.1.0...v12.0.0) (2024-09-12)
+
+
+### Bug Fixes
+
+* **ios:** Make unique id, unique per device and not per ios account(keychain) ([#1642](https://github.com/react-native-device-info/react-native-device-info/issues/1642)) ([8198f22](https://github.com/react-native-device-info/react-native-device-info/commit/8198f224ea828f7a9df0e57b18a24a170b2d636b))
+
+
+### BREAKING CHANGES
+
+* **ios:** iOS getUniqueId is now per-device similar to android, not per-user
+
+If you relied on the previous per-user behavior on iOS the recommended path forward is
+to use https://github.com/oblador/react-native-keychain with `WHEN_UNLOCKED`
+https://github.com/oblador/react-native-keychain?tab=readme-ov-file#keychainaccessible-enum
+and store your id as a key/value pair of your key and the id mapped into the username/password
+API of react-native-keychain
+
+Co-authored-by: Humaid Arif Khan <humaid@Humaidk-MBP.lan>
+
+# [11.1.0](https://github.com/react-native-device-info/react-native-device-info/compare/v11.0.0...v11.1.0) (2024-05-15)
+
+
+### Features
+
+* **android:** detect MEmu emulator in isEmulator ([ac172f6](https://github.com/react-native-device-info/react-native-device-info/commit/ac172f6b98ca4fca206bb84f270b4dea1f0c3f90))
+
+# [11.0.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.14.0...v11.0.0) (2024-05-15)
+
+
+* fix(android)!: removed getPhoneNumber - use react-native-sim-cards-manager (#1617) ([dce8bd5](https://github.com/react-native-device-info/react-native-device-info/commit/dce8bd5e205fe4baf9320613e6e565e21b395687)), closes [#1617](https://github.com/react-native-device-info/react-native-device-info/issues/1617)
+* feat(android)!: targetSdk 34 receiver export specification, requires compileSdk 33+ (#1621) ([b32cde7](https://github.com/react-native-device-info/react-native-device-info/commit/b32cde7bb40b0fbad912c40525b75d6c3dfc08b0)), closes [#1621](https://github.com/react-native-device-info/react-native-device-info/issues/1621)
+
+
+### BREAKING CHANGES
+
+* removed getPhoneNumber to avoid Google Play Store rejections,
+use react-native-sim-cards-manager for similar functionality as desired
+* requires compileSdk 33+
+
+# [10.14.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.13.2...v10.14.0) (2024-05-15)
+
+
+### Features
+
+* Add isWiredHeadphonesConnected and IsBluetoothHeadphonesConnected ([#1623](https://github.com/react-native-device-info/react-native-device-info/issues/1623)) ([fe66322](https://github.com/react-native-device-info/react-native-device-info/commit/fe66322a640309aa52d393976b3c9bf0f38bf648))
+
+## [10.13.2](https://github.com/react-native-device-info/react-native-device-info/compare/v10.13.1...v10.13.2) (2024-04-21)
+
+
+### Bug Fixes
+
+* **ios:** add Apple privacy manifest ([#1624](https://github.com/react-native-device-info/react-native-device-info/issues/1624)) ([23f95db](https://github.com/react-native-device-info/react-native-device-info/commit/23f95dbe55f38f11fc2cba8efe0eb3e11676d07b)), closes [#1622](https://github.com/react-native-device-info/react-native-device-info/issues/1622)
+
+## [10.13.1](https://github.com/react-native-device-info/react-native-device-info/compare/v10.13.0...v10.13.1) (2024-02-26)
+
+
+### Bug Fixes
+
+* **ios:** fix missing visionOS symbol compile error in xcode < 15 ([#1615](https://github.com/react-native-device-info/react-native-device-info/issues/1615)) ([fd30902](https://github.com/react-native-device-info/react-native-device-info/commit/fd309022551121a938e8ee090fdb9d7e3ba07e60))
+
+# [10.13.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.12.1...v10.13.0) (2024-02-23)
+
+
+### Features
+
+* add visionOS platform support ([#1614](https://github.com/react-native-device-info/react-native-device-info/issues/1614)) ([56e42d8](https://github.com/react-native-device-info/react-native-device-info/commit/56e42d898bf31b6d6cfc1a58e8dc26936f3ded82))
+
+## [10.12.1](https://github.com/react-native-device-info/react-native-device-info/compare/v10.12.0...v10.12.1) (2024-02-23)
+
+
+### Bug Fixes
+
+* wrap return value of useOnEvent in useMemo ([2cdc43d](https://github.com/react-native-device-info/react-native-device-info/commit/2cdc43d93586e93bb00bf0b2b00ec8b9ee0b8c79))
+
+# [10.12.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.11.0...v10.12.0) (2023-11-28)
+
+
+### Features
+
+* **android:** implemented getSupportedMediaTypeList method ([#1590](https://github.com/react-native-device-info/react-native-device-info/issues/1590)) ([89a3c4c](https://github.com/react-native-device-info/react-native-device-info/commit/89a3c4c8860f58b2963a3a4274cdb492dcd50b7c))
+
+# [10.11.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.10.0...v10.11.0) (2023-09-19)
+
+
+### Features
+
+* **android:** add new isLowRamDevice constant ([#1571](https://github.com/react-native-device-info/react-native-device-info/issues/1571)) ([f608fd5](https://github.com/react-native-device-info/react-native-device-info/commit/f608fd5afe9cc130098f99bb7134251d01410a97))
+
+# [10.10.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.9.0...v10.10.0) (2023-09-19)
+
+
+### Features
+
+* Add device names for iPhone 15 family, add check for dynamic island ([#1569](https://github.com/react-native-device-info/react-native-device-info/issues/1569)) ([8e512ec](https://github.com/react-native-device-info/react-native-device-info/commit/8e512ecdffc855f49fc51fecc6e433eda9c6ca6c))
+
+# [10.9.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.8.0...v10.9.0) (2023-08-28)
+
+
+### Features
+
+* **windows:** Implemented getHostNames() for windows ([#1565](https://github.com/react-native-device-info/react-native-device-info/issues/1565)) ([eab4992](https://github.com/react-native-device-info/react-native-device-info/commit/eab49922deaeb6e9e73cfaab6ad1e674de1d21cb))
+
+# [10.8.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.7.0...v10.8.0) (2023-07-12)
+
+
+### Features
+
+* **windows:** Implemented gethost() for windows ([#1552](https://github.com/react-native-device-info/react-native-device-info/issues/1552)) ([aa4f6e0](https://github.com/react-native-device-info/react-native-device-info/commit/aa4f6e07c587601872445d53e62a976a7b773418))
+
+# [10.7.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.6.1...v10.7.0) (2023-06-30)
+
+
+### Features
+
+* **android:** add support for React Native 0.73 ([#1546](https://github.com/react-native-device-info/react-native-device-info/issues/1546)) ([38f9665](https://github.com/react-native-device-info/react-native-device-info/commit/38f96650d61198c88d7691c9998098c4969bca49))
+
+## [10.6.1](https://github.com/react-native-device-info/react-native-device-info/compare/v10.6.0...v10.6.1) (2023-06-29)
+
+
+### Bug Fixes
+
+* **windows:** bump WindowsTargetPlatformMinVersion ([#1537](https://github.com/react-native-device-info/react-native-device-info/issues/1537)) ([7f0f1c2](https://github.com/react-native-device-info/react-native-device-info/commit/7f0f1c28d04bb3c1eb460ee014dbe76a45b354f1))
+
+# [10.6.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.5.1...v10.6.0) (2023-04-06)
+
+
+### Features
+
+* **windows:** implementation for useBatteryLevel & useBatteryLevelIsLow ([18e3a54](https://github.com/react-native-device-info/react-native-device-info/commit/18e3a54d68dbb7d5865bb4e25b1f24fd6b75474a))
+
+## [10.5.1](https://github.com/react-native-device-info/react-native-device-info/compare/v10.5.0...v10.5.1) (2023-03-29)
+
+
+### Bug Fixes
+
+* add missing mock ([#1511](https://github.com/react-native-device-info/react-native-device-info/issues/1511)) ([5d7a8d2](https://github.com/react-native-device-info/react-native-device-info/commit/5d7a8d2f4fde8ee8cba6995101c37f44de1371b1))
+
+# [10.5.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.4.0...v10.5.0) (2023-03-28)
+
+
+### Features
+
+* **windows:** implementation of EnergySaverStatusChanged to emitt event RNDeviceInfo_powerStateDidChange ([c974b31](https://github.com/react-native-device-info/react-native-device-info/commit/c974b3172273b720e800eaff1e9a3e539143397f))
+
+# [10.4.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.3.1...v10.4.0) (2023-02-15)
+
+
+### Features
+
+* **ios:** add isDisplayZoomed constant ([#1495](https://github.com/react-native-device-info/react-native-device-info/issues/1495)) ([0f7ac92](https://github.com/react-native-device-info/react-native-device-info/commit/0f7ac9283d0463111d8ba1a6b1ab98dac042ba64))
+
+## [10.3.1](https://github.com/react-native-device-info/react-native-device-info/compare/v10.3.0...v10.3.1) (2023-02-15)
+
+
+### Bug Fixes
+
+* **ios:** getUserAgentSync: separate memoKeys for sync / non-sync usage ([#1506](https://github.com/react-native-device-info/react-native-device-info/issues/1506)) ([4bda3ba](https://github.com/react-native-device-info/react-native-device-info/commit/4bda3ba139333160a35f4935e06ba1899a91f59d))
+
+# [10.3.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.2.1...v10.3.0) (2022-10-21)
+
+
+### Features
+
+* **android, instanceId:** implement instanceId as UUIDv4 in prefs ([00aa218](https://github.com/react-native-device-info/react-native-device-info/commit/00aa218f2670b7e3517a4204b627596b3f7d139c))
+
+## [10.2.1](https://github.com/react-native-device-info/react-native-device-info/compare/v10.2.0...v10.2.1) (2022-10-05)
+
+
+### Bug Fixes
+
+* **android:**  getDeviceName handle new exception beginning API>=32 ([#1471](https://github.com/react-native-device-info/react-native-device-info/issues/1471)) ([2364514](https://github.com/react-native-device-info/react-native-device-info/commit/2364514aea0caa305f7b96e892f63b58711036c1))
+
+# [10.2.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.1.2...v10.2.0) (2022-09-18)
+
+
+### Features
+
+* **ios, firstInstallTime:** implement first install time for iOS ([63b9feb](https://github.com/react-native-device-info/react-native-device-info/commit/63b9febdb7639c61c9f369cef9d8af45092390e1))
+
+## [10.1.2](https://github.com/react-native-device-info/react-native-device-info/compare/v10.1.1...v10.1.2) (2022-09-13)
+
+
+### Bug Fixes
+
+* **hasNotch:** add iPhone 14 Pro / Pro Max to devices with notch ([b818d9f](https://github.com/react-native-device-info/react-native-device-info/commit/b818d9f51bf4e86e4a80cd07b33eda3c6147747c))
+
+## [10.1.1](https://github.com/react-native-device-info/react-native-device-info/compare/v10.1.0...v10.1.1) (2022-09-09)
+
+
+### Bug Fixes
+
+* add getDeviceType and getDeviceTypeSync mocks ([#1437](https://github.com/react-native-device-info/react-native-device-info/issues/1437)) ([d92e9f9](https://github.com/react-native-device-info/react-native-device-info/commit/d92e9f93d2c00d892345dbba75104e63b2983b2b))
+
+# [10.1.0](https://github.com/react-native-device-info/react-native-device-info/compare/v10.0.2...v10.1.0) (2022-09-09)
+
+
+### Bug Fixes
+
+* **hasNotch:** add iPhone 14 / iPhone 14 Plus to devices with notch ([fc3b488](https://github.com/react-native-device-info/react-native-device-info/commit/fc3b48846ad5ad2970698ac9b01a21ef1694cf43))
+
+
+### Features
+
+* add device names for iPhone 14 family ([2df220f](https://github.com/react-native-device-info/react-native-device-info/commit/2df220fb9e8672350c2404da87f61d81a3725d6d))
+* add method to check if device has dynamic island ([6119011](https://github.com/react-native-device-info/react-native-device-info/commit/6119011d54a9626377f0831f18b2ba61838f3943))
+
+## [10.0.2](https://github.com/react-native-device-info/react-native-device-info/compare/v10.0.1...v10.0.2) (2022-07-18)
+
+
+### Bug Fixes
+
+* **types, flow:** add missing getUniqueIdSync in index.js.flow ([#1441](https://github.com/react-native-device-info/react-native-device-info/issues/1441)) ([1d3890a](https://github.com/react-native-device-info/react-native-device-info/commit/1d3890a31ea9a18837c595ee8df86057e9c0a792))
+
+## [10.0.1](https://github.com/react-native-device-info/react-native-device-info/compare/v10.0.0...v10.0.1) (2022-07-11)
+
+
+### Bug Fixes
+
+* **types:** add missing hasGms hasHms flow types ([#1436](https://github.com/react-native-device-info/react-native-device-info/issues/1436)) ([f51fb98](https://github.com/react-native-device-info/react-native-device-info/commit/f51fb98716c76d4598a3e8c832d706fa215f2831))
+
+# [10.0.0](https://github.com/react-native-device-info/react-native-device-info/compare/v9.0.2...v10.0.0) (2022-07-08)
+
+
+* fix!: remove uniqueId from constants, move to sync/async methods (#1433) ([449e1a8](https://github.com/react-native-device-info/react-native-device-info/commit/449e1a8579d057e27aa331963204e595a5179a17)), closes [#1433](https://github.com/react-native-device-info/react-native-device-info/issues/1433)
+
+
+### BREAKING CHANGES
+
+* `uniqueId` constant is no longer available, use either `getUniqueIdSync()` or `getUniqueId()` 
+(which now returns `Promise<string>`) instead. This is to confirm with app store policies that may reject your app if you access this constant before obtaining consent (thus requiring removal from the set of constants, which are fetched on startup)
+
+## [9.0.2](https://github.com/react-native-device-info/react-native-device-info/compare/v9.0.1...v9.0.2) (2022-06-04)
+
+
+### Bug Fixes
+
+* **example, windows:** Define an explicit 10.0 in example project to use latest windows 10 sdk ([#1424](https://github.com/react-native-device-info/react-native-device-info/issues/1424)) ([92c4db6](https://github.com/react-native-device-info/react-native-device-info/commit/92c4db6e543377485736920a94558e1d0ab4885c)), closes [#1288](https://github.com/react-native-device-info/react-native-device-info/issues/1288)
+
+## [9.0.1](https://github.com/react-native-device-info/react-native-device-info/compare/v9.0.0...v9.0.1) (2022-06-04)
+
+
+### Bug Fixes
+
+* **web:** Illegal invocation from getBattery call ([#1333](https://github.com/react-native-device-info/react-native-device-info/issues/1333)) ([77dcf2c](https://github.com/react-native-device-info/react-native-device-info/commit/77dcf2cab4db3523f4cf4da56a80e962a05cc593)), closes [#1223](https://github.com/react-native-device-info/react-native-device-info/issues/1223)
+
+# [9.0.0](https://github.com/react-native-device-info/react-native-device-info/compare/v8.7.1...v9.0.0) (2022-06-02)
+
+
+* fix(windows)!: Misc cleanup to windows. Support only RNW63 and newer. (#1419) ([3bd6f88](https://github.com/react-native-device-info/react-native-device-info/commit/3bd6f8803f092a5f228e39c53c53e75ea3115452)), closes [#1419](https://github.com/react-native-device-info/react-native-device-info/issues/1419)
+
+
+### BREAKING CHANGES
+
+* needs react-native-windows 0.63+ and MSVC build tools v142+ (Visual Studio 2019+), drop arm32
+
+## [8.7.1](https://github.com/react-native-device-info/react-native-device-info/compare/v8.7.0...v8.7.1) (2022-04-30)
+
+
+### Bug Fixes
+
+* **windows:** addListener/removeListeners native stubs to quiet warnings ([#1408](https://github.com/react-native-device-info/react-native-device-info/issues/1408)) ([55166b4](https://github.com/react-native-device-info/react-native-device-info/commit/55166b4bc8a9ca1a81acac4aa1110c759c28169e)), closes [#1288](https://github.com/react-native-device-info/react-native-device-info/issues/1288)
+
+# [8.7.0](https://github.com/react-native-device-info/react-native-device-info/compare/v8.6.0...v8.7.0) (2022-03-29)
+
+
+### Features
+
+* **ios:** add useBrightness for iOS ([#1402](https://github.com/react-native-device-info/react-native-device-info/issues/1402)) ([5bf9df7](https://github.com/react-native-device-info/react-native-device-info/commit/5bf9df7459d1bda3928bfe2887ac56f67e861249))
+
+# [8.6.0](https://github.com/react-native-device-info/react-native-device-info/compare/v8.5.1...v8.6.0) (2022-03-28)
+
+
+### Features
+
+* **ios:** add getBrightness support for iOS ([#1398](https://github.com/react-native-device-info/react-native-device-info/issues/1398)) ([1bcbdd3](https://github.com/react-native-device-info/react-native-device-info/commit/1bcbdd36cd1b5fa5223ecd0d516d16acfb9aa164))
+
+## [8.5.1](https://github.com/react-native-device-info/react-native-device-info/compare/v8.5.0...v8.5.1) (2022-03-21)
+
+
+### Bug Fixes
+
+* **ios:** add device name for iPhone SE 3rd gen ([#1394](https://github.com/react-native-device-info/react-native-device-info/issues/1394)) ([8923995](https://github.com/react-native-device-info/react-native-device-info/commit/89239958414d22485e04552bf28c349f50fadb50))
+
+# [8.5.0](https://github.com/react-native-device-info/react-native-device-info/compare/v8.4.9...v8.5.0) (2022-03-04)
+
+
+### Features
+
+* **windows, supportedAbis:** Add supportedAbis for windows ([#1389](https://github.com/react-native-device-info/react-native-device-info/issues/1389)) ([8a97c4c](https://github.com/react-native-device-info/react-native-device-info/commit/8a97c4c9484e18296f316c572e1356b5ebb3725f))
+
+## [8.4.9](https://github.com/react-native-device-info/react-native-device-info/compare/v8.4.8...v8.4.9) (2022-02-07)
+
+
+### Bug Fixes
+
+* **has-notch:** add huawei p40 lite to notches list ([#1378](https://github.com/react-native-device-info/react-native-device-info/issues/1378)) ([bbca38f](https://github.com/react-native-device-info/react-native-device-info/commit/bbca38f575534a37f6026cc90e29520c6c444052))
+
 ## [8.4.8](https://github.com/react-native-device-info/react-native-device-info/compare/v8.4.7...v8.4.8) (2021-11-17)
 
 
